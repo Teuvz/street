@@ -4,6 +4,7 @@ import com.ukuleledog.games.street.state.GameState;
 import flash.display.Sprite;
 import flash.events.Event;
 import flash.Lib;
+import net.hires.debug.Stats;
 
 /**
  * ...
@@ -36,6 +37,7 @@ class Main extends Sprite
 		// nme.Assets.getBitmapData("img/assetname.jpg");
 		
 		addChild( new GameState() );
+		addChild( new Stats() );
 		
 	}
 

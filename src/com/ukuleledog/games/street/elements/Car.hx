@@ -3,11 +3,15 @@ package com.ukuleledog.games.street.elements;
 import com.ukuleledog.games.core.GameObject;
 import flash.display.Bitmap;
 import flash.display.BitmapData;
+import flash.display.Sprite;
 import flash.events.Event;
 import flash.events.TimerEvent;
 import flash.geom.Point;
 import flash.geom.Rectangle;
-import flash.utils.Timer;
+import haxe.Timer;
+import haxe.remoting.FlashJsConnection;
+import motion.Actuate;
+import motion.easing.Bounce;
 import openfl.Assets;
 
 /**
@@ -18,53 +22,71 @@ class Car extends GameObject
 {
 
 	private var spritesheet:BitmapData;
-	private var base:Bitmap;
-	private var destructable:Bitmap; 
-	private var step:UInt = 1;
-	
-	private var carWidth:UInt = 205;
-	
-	
+	private var base:Sprite;
+	private var body:Sprite;
+	private var step:UInt = 0;
+	private var hitsDelta:UInt = 3;
+	private var hitCount:UInt = 0;
+		
 	public function new() 
 	{
 		super();
 	
-		this.spritesheet = Assets.getBitmapData('img/car.png', true);
+		spritesheet = Assets.getBitmapData('img/spritesheet.png', true);
 		
-		var bmd:BitmapData = new BitmapData(carWidth, 100, true, 0xF800F8);
-		bmd.copyPixels( this.spritesheet, new Rectangle(0, 0, carWidth, 100), new Point(0, 0) );
-		base = new Bitmap( bmd );
-		base.x = 200;
-		base.y = 200;
+		base = new Sprite();
+		base.graphics.beginBitmapFill( spritesheet );
+		base.graphics.drawRect( 0, 0, 200, 100);
+		base.graphics.endFill();
+		base.cacheAsBitmap = true;
 		addChild( base );
 		
-		var bmd2:BitmapData = new BitmapData(carWidth, 100, true, 0xF800F8);
-		bmd2.copyPixels( this.spritesheet, new Rectangle(carWidth, 0, carWidth, 100), new Point(0, 0) );
-		destructable = new Bitmap( bmd2 );
-		destructable.x = 205;
-		destructable.y = 187;
-		addChild( destructable );
+		var bmd:BitmapData = new BitmapData( 200, 100, true );
+		bmd.copyPixels( spritesheet, new Rectangle( 0, 110, 200, 100 ), new Point(0,0) );
 		
-		var timer:Timer = new Timer( 500 );
-		timer.addEventListener( TimerEvent.TIMER, changeStep );
-		timer.start();
+		body = new Sprite();
+		body.graphics.beginBitmapFill( bmd );
+		body.graphics.drawRect( 0, 0, 199, 100 );
+		body.graphics.endFill();
+		body.x = 3;
+		body.y = -3;
+		body.cacheAsBitmap = true;
+		addChild( body );
 		
 	}
 	
-	private function changeStep( e:Event = null )
+	public function nextStep()
 	{
+		if ( step >= 12 )
+			return;
+			
+		hitCount++;
+		
+		if ( hitCount > hitsDelta * step )
 		step++;
 		
-		if ( step == 4 )
-			step = 1;
+		var bmd:BitmapData = new BitmapData( 200, 100, true );
+		bmd.copyPixels( spritesheet, new Rectangle( step*200, 110, 200, 100 ), new Point(0,0) );
 		
-		removeChild( destructable );
-		var bmd2:BitmapData = new BitmapData(carWidth, 100, true, 0xF800F8);
-		bmd2.copyPixels( this.spritesheet, new Rectangle(carWidth*step, 0, 200, 100), new Point(0, 0) );
-		destructable = new Bitmap( bmd2 );
-		destructable.x = 205;
-		destructable.y = 187;
-		addChild( destructable );
+		removeChild( body );
+		body.graphics.clear();
+		body.graphics.beginBitmapFill( bmd );
+		body.graphics.drawRect( 0, 0, 199, 100 );
+		body.graphics.endFill();
+		addChild( body );
+		
+		Actuate.tween( body, 0.2, { x:7 } ).ease(Bounce.easeOut).onComplete( function() { 
+			Actuate.tween( body, 0.2, {x:3} ).ease(Bounce.easeOut);
+		} );
+		
+		if ( step == 12 )
+		{
+			Timer.delay( function() {
+				dispatchEvent( new Event( Event.COMPLETE ) );		
+			}, 1000 );
+		}
 	}
+	
+	
 	
 }
